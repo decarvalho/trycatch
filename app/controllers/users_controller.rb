@@ -1,6 +1,7 @@
 class UsersController < ApplicationController
   http_basic_authenticate_with :email => "email@email.com", :password => "1234"
   before_filter :authenticate_user!
+  before_filter :fetch_user, :except => [:index, :create]
 
   def fetch_user
     @user = User.find_by_id(params[:id])
