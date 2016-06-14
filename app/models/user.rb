@@ -9,4 +9,5 @@ class User < ApplicationRecord
     self.role ||= :user
   end
 
+  accepts_nested_attributes_for :posts
 end
