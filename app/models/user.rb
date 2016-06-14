@@ -1,4 +1,5 @@
 class User < ApplicationRecord
+  attr_accessible :email, :password, :temp_password
   has_many :posts
 
   enum role: [:admin, :user, :guest]
@@ -7,5 +8,5 @@ class User < ApplicationRecord
   def set_default_role
     self.role ||= :user
   end
-  
+
 end
