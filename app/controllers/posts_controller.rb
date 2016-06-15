@@ -4,38 +4,62 @@ class PostsController < ApplicationController
   # GET /posts
   def index
     @posts = Post.all
-
-    render json: @posts
+    respond_to do |format|
+      format.json { render json: @posts }
+    end
   end
 
   # GET /posts/1
   def show
-    render json: @post
+    respond_to do |format|
+      format.json { render json: @post }
+    end
   end
 
   # POST /posts
   def create
     @post = Post.new(post_params)
-
-    if @post.save
-      render json: @post, status: :created, location: @post
-    else
-      render json: @post.errors, status: :unprocessable_entity
+    #guests can only read
+    unless @post.user.guest?
+      respond_to do |format|
+        if @post.save
+          format.json { render json: @post, status: :created }
+        else
+          format.json { render json: @post.errors, status: :unprocessable_entity }
+        end
+      end
     end
   end
 
   # PATCH/PUT /posts/1
   def update
-    if @post.update(post_params)
-      render json: @post
-    else
-      render json: @post.errors, status: :unprocessable_entity
+    #guests can only read
+    unless @post.user.guest?
+      respond_to do |format|
+        #user can only edit/update his posts, admin can edit/update any
+        if ((@post.user.user? and (params[:post][:user] == @post.user)) or @post.user.admin?)
+          if @post.update_attributes(params[:post])
+            format.json { head :no_content, status: :ok }
+          else
+            format.json { render json: @post.errors, status: :unprocessable_entity }
+          end
+        end
+      end
     end
   end
 
   # DELETE /posts/1
   def destroy
-    @post.destroy
+    #guests can only read
+    unless @post.user.guest?
+      respond_to do |format|
+        #user can only edit/update his posts, admin can edit/update any
+        if ((@post.user.user? and (params[:post][:user] == @post.user)) or @post.user.admin?)
+          @post.destroy
+          format.json { head :no_content, status: :ok }
+        end
+      end
+    end
   end
 
   private
