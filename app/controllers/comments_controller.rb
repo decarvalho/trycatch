@@ -4,38 +4,62 @@ class CommentsController < ApplicationController
   # GET /comments
   def index
     @comments = Comment.all
-
-    render json: @comments
+    respond_to do |format|
+      format.json { render json: @comments }
+    end
   end
 
   # GET /comments/1
   def show
-    render json: @comment
+    respond_to do |format|
+      format.json { render json: @comment }
+    end
   end
 
   # POST /comments
   def create
-    @comment = Comment.new(comment_params)
-
-    if @comment.save
-      render json: @comment, status: :created, location: @comment
-    else
-      render json: @comment.errors, status: :unprocessable_entity
+    @comment = Comment.new(post_params)
+    #guests can only read
+    unless @comment.post.user.guest?
+      respond_to do |format|
+        if @comment.save
+          format.json { render json: @comment, status: :created }
+        else
+          format.json { render json: @comment.errors, status: :unprocessable_entity }
+        end
+      end
     end
   end
 
   # PATCH/PUT /comments/1
   def update
-    if @comment.update(comment_params)
-      render json: @comment
-    else
-      render json: @comment.errors, status: :unprocessable_entity
+    #guests can only read
+    unless @comment.user.guest?
+      respond_to do |format|
+        #user can only edit/update his posts, admin can edit/update any
+        if ((@comment.post.user.user? and (params[:comment][:post][:user] == @comment.post.user)) or @comment.post.user.admin?)
+          if @comment.update_attributes(params[:comment])
+            format.json { head :no_content, status: :ok }
+          else
+            format.json { render json: @comment.errors, status: :unprocessable_entity }
+          end
+        end
+      end
     end
   end
 
   # DELETE /comments/1
   def destroy
-    @comment.destroy
+    #guests can only read
+    unless @comment.post.user.guest?
+      respond_to do |format|
+        #user can only edit/update his posts, admin can edit/update any
+        if ((@comment.post.user.user? and (params[:comment][:post][:user] == @comment.post.user)) or @comment.post.user.admin?)
+          @comment.destroy
+          format.json { head :no_content, status: :ok }
+        end
+      end
+    end
   end
 
   private
